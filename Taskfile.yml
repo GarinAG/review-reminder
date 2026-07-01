@@ -1,0 +1,51 @@
+version: '3'
+
+vars:
+  APP_NAME: ReviewReminder
+  BUILD_DIR: build
+  APPS_DIR: '{{.HOME}}/Applications'
+
+tasks:
+  setup:
+    cmds:
+      - Scripts/setup.sh
+
+  generate:
+    cmds:
+      - xcodegen generate
+
+  build:
+    deps: [generate]
+    cmds:
+      - xcodebuild -scheme {{.APP_NAME}} -configuration Debug -derivedDataPath {{.BUILD_DIR}} build
+
+  release:
+    deps: [generate]
+    cmds:
+      - Scripts/build.sh
+
+  install:
+    deps: [release]
+    cmds:
+      - Scripts/install.sh
+
+  install-swift:
+    desc: "Сборка + установка без Xcode (только SwiftPM)"
+    cmds:
+      - swift build -c release
+      - Scripts/install.sh
+
+  clean:
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+      - rm -rf {{.APP_NAME}}.xcodeproj
+
+  open:
+    deps: [generate]
+    cmds:
+      - open {{.APP_NAME}}.xcodeproj
+
+  mock-gitlab:
+    desc: "Запуск мок-сервера GitLab API на localhost:8787 для скриншотов"
+    cmds:
+      - python3 Scripts/mock_gitlab.py
