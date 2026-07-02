@@ -98,6 +98,15 @@ struct MenuBarView: View {
 
             Spacer()
 
+            if let nextReminderDate = appState.nextReminderDate, appState.pendingCount > 0 {
+                Text(MRDisplayItem.relativeDateDescription(
+                    nextReminderDate, prefix: "напомню", tomorrowPrefix: "напомню завтра"
+                ))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                Spacer()
+            }
+
             Button("Настройки") {
                 openSettings()
                 NSApp.activate(ignoringOtherApps: true)

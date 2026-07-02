@@ -30,8 +30,7 @@ actor NotificationService {
     private nonisolated(unsafe) let center = UNUserNotificationCenter.current()
     private let delegate = NotificationDelegate()
     private let reminderID = "com.reviewreminder.reminder"
-    private var scheduledReminderFireDate: Date?
-    private var firedReminderAnchor: Date?
+    private var lastFiredAt: Date?
 
     func requestAuthorization() async {
         center.delegate = delegate
@@ -47,8 +46,9 @@ actor NotificationService {
         content.sound = .default
         content.userInfo = ["url": url]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, afterSeconds), repeats: false)
+        let id = "snooze-\(String(url.prefix(180)))"
         let request = UNNotificationRequest(
-            identifier: "snooze-\(String(url.prefix(180)))",
+            identifier: id,
             content: content,
             trigger: trigger
         )
@@ -62,8 +62,9 @@ actor NotificationService {
         content.sound = .default
         content.userInfo = ["url": url]
 
+        let id = "mr-changed-\(String(url.prefix(180)))"
         let request = UNNotificationRequest(
-            identifier: "mr-changed-\(String(url.prefix(180)))",
+            identifier: id,
             content: content,
             trigger: nil
         )
@@ -77,50 +78,42 @@ actor NotificationService {
         content.sound = .default
         content.userInfo = ["url": url]
 
+        let id = "mr-new-\(String(url.prefix(180)))"
         let request = UNNotificationRequest(
-            identifier: "mr-new-\(String(url.prefix(180)))",
+            identifier: id,
             content: content,
             trigger: nil
         )
         try? await center.add(request)
     }
 
-    // anchor: timestamp the oldest pending MR became pending (not "now") — keeps the
-    // fire date stable across polls instead of pushing it back on every poll tick.
-    func scheduleReminder(anchor: Date, count: Int, afterMinutes: Int) async {
-        let fireDate = anchor.addingTimeInterval(TimeInterval(afterMinutes * 60))
-
-        if fireDate <= Date() {
-            guard firedReminderAnchor != anchor else { return }
-            firedReminderAnchor = anchor
-            scheduledReminderFireDate = nil
-            center.removePendingNotificationRequests(withIdentifiers: [reminderID])
-            let request = UNNotificationRequest(
-                identifier: reminderID,
-                content: reminderContent(count: count),
-                trigger: nil
-            )
-            try? await center.add(request)
+    // Repeats every `afterMinutes` from the last fire (baseline is "now" on first observation
+    // since app start / last cancelReminder()), for as long as there is at least one pending MR.
+    // Driven by a local tick (see AppState) rather than the network poll cycle, so it fires
+    // reliably regardless of poll interval.
+    func scheduleReminder(count: Int, afterMinutes: Int) async {
+        // First observation since app start / last cancelReminder(): establish baseline "now"
+        // instead of firing immediately for MRs already stale in GitLab — avoids double-firing
+        // alongside the "new MR" notification.
+        guard let base = lastFiredAt else {
+            lastFiredAt = Date()
             return
         }
 
-        guard scheduledReminderFireDate != fireDate else { return }
-        scheduledReminderFireDate = fireDate
-        firedReminderAnchor = nil
-        center.removePendingNotificationRequests(withIdentifiers: [reminderID])
+        let fireDate = base.addingTimeInterval(TimeInterval(afterMinutes * 60))
+        guard fireDate <= Date() else { return }
 
-        // Calendar trigger (not time-interval) so it survives sleep/shutdown of the machine.
-        let components = Calendar.current.dateComponents(
-            [.year, .month, .day, .hour, .minute, .second],
-            from: fireDate
-        )
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(
             identifier: reminderID,
             content: reminderContent(count: count),
-            trigger: trigger
+            trigger: nil
         )
-        try? await center.add(request)
+        do {
+            try await center.add(request)
+            lastFiredAt = Date()
+        } catch {
+            // Delivery failed (e.g. permission revoked) — keep base so we retry next tick.
+        }
     }
 
     private func reminderContent(count: Int) -> UNMutableNotificationContent {
@@ -148,7 +141,12 @@ actor NotificationService {
 
     func cancelReminder() async {
         center.removePendingNotificationRequests(withIdentifiers: [reminderID])
-        scheduledReminderFireDate = nil
-        firedReminderAnchor = nil
+        lastFiredAt = nil
+    }
+
+    // Projected next fire time for UI display.
+    func nextFireDate(afterMinutes: Int) -> Date? {
+        guard let lastFiredAt else { return nil }
+        return lastFiredAt.addingTimeInterval(TimeInterval(afterMinutes * 60))
     }
 }

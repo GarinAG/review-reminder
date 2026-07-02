@@ -66,10 +66,6 @@ struct AppConfig: Sendable {
     var isConfigured: Bool {
         !gitlabURL.isEmpty && !repositories.isEmpty
     }
-
-    var gitlabURLIsSecure: Bool {
-        gitlabURL.lowercased().hasPrefix("https://")
-    }
 }
 
 private extension Int {

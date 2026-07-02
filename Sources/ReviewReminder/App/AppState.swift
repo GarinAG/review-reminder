@@ -11,6 +11,7 @@ final class AppState: @unchecked Sendable {
     var lastError: String?
     var currentUser: GitLabUser?
     var stats: ReviewStats?
+    var nextReminderDate: Date?
 
     nonisolated let keychain      = KeychainService()
     nonisolated let apiClient     = GitLabAPIClient()
@@ -27,14 +28,27 @@ final class AppState: @unchecked Sendable {
             await notifications.requestAuthorization()
             await polling.start(appState: self)
         }
-        // Fallback snooze expiry checker every 15s (handles app restarts with existing DB snoozes)
+        // Local tick every 15s: handles snooze expiry and reminder firing without depending on
+        // the network poll cycle, so both stay accurate regardless of pollIntervalMinutes.
         Task { @MainActor [weak self] in
             while true {
                 try? await Task.sleep(nanoseconds: 15_000_000_000)
                 guard let self else { return }
                 self.activateExpiredSnoozes()
+                await self.tickReminder()
             }
         }
+    }
+
+    private func tickReminder() async {
+        let config = AppConfig.load()
+        guard config.reminderEnabled, pendingCount > 0 else {
+            await notifications.cancelReminder()
+            nextReminderDate = nil
+            return
+        }
+        await notifications.scheduleReminder(count: pendingCount, afterMinutes: config.reminderIntervalMinutes)
+        nextReminderDate = await notifications.nextFireDate(afterMinutes: config.reminderIntervalMinutes)
     }
 
     func refreshNow() {

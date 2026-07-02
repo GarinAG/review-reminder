@@ -152,6 +152,7 @@ struct SettingsView: View {
 
                 if config.reminderEnabled {
                     Picker("Напоминать каждые", selection: $config.reminderIntervalMinutes) {
+                        Text("5 мин").tag(5)
                         Text("15 мин").tag(15)
                         Text("30 мин").tag(30)
                         Text("1 час").tag(60)
@@ -293,10 +294,6 @@ struct SettingsView: View {
     }
 
     private func save() {
-        guard config.gitlabURL.isEmpty || config.gitlabURLIsSecure else {
-            saveMessage = "⚠︎ GitLab URL должен начинаться с https://"
-            return
-        }
         isSaving = true
         Task {
             if !tokenInput.isEmpty {

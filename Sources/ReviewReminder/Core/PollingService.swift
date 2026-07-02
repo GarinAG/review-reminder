@@ -88,16 +88,6 @@ actor PollingService {
                     : "Не удалось обновить: \(failedRepos.joined(separator: ", "))"
             }
 
-            if config.reminderEnabled, let oldestPending = pending.map(\.updatedAt).min() {
-                await appState.notifications.scheduleReminder(
-                    anchor: oldestPending,
-                    count: pending.count,
-                    afterMinutes: config.reminderIntervalMinutes
-                )
-            } else {
-                await appState.notifications.cancelReminder()
-            }
-
         } catch {
             await MainActor.run {
                 appState.isLoading = false

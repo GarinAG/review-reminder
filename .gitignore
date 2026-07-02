@@ -10,6 +10,7 @@ DerivedData/
 
 # Build output
 build/
+mocks/
 
 # macOS
 .DS_Store

@@ -37,7 +37,7 @@ struct MRDisplayItem: Identifiable, Sendable, Equatable {
     }
 
     var ageDescription: String {
-        let interval = Date().timeIntervalSince(updatedAt)
+        let interval = Date().timeIntervalSince(createdAt)
         let hours = Int(interval / 3600)
         if hours < 24 { return "\(hours)ч" }
         let days = hours / 24
@@ -45,22 +45,26 @@ struct MRDisplayItem: Identifiable, Sendable, Equatable {
     }
 
     var isOld: Bool {
-        Date().timeIntervalSince(updatedAt) > 86400 * 2
+        Date().timeIntervalSince(createdAt) > 86400 * 2
     }
 
     var snoozeUntilDescription: String? {
         guard status == .snoozed, let until = snoozedUntil, until > Date() else { return nil }
+        return Self.relativeDateDescription(until, prefix: "до", tomorrowPrefix: "до завтра")
+    }
+
+    static func relativeDateDescription(_ date: Date, prefix: String, tomorrowPrefix: String) -> String {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ru_RU")
         let cal = Calendar.current
-        if cal.isDateInToday(until) {
-            fmt.dateFormat = "'до' HH:mm"
-        } else if cal.isDateInTomorrow(until) {
-            fmt.dateFormat = "'до завтра' HH:mm"
+        if cal.isDateInToday(date) {
+            fmt.dateFormat = "'\(prefix)' HH:mm"
+        } else if cal.isDateInTomorrow(date) {
+            fmt.dateFormat = "'\(tomorrowPrefix)' HH:mm"
         } else {
-            fmt.dateFormat = "'до' d MMM HH:mm"
+            fmt.dateFormat = "'\(prefix)' d MMM HH:mm"
         }
-        return fmt.string(from: until)
+        return fmt.string(from: date)
     }
 
     var repoName: String {
