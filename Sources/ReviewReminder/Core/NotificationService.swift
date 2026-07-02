@@ -27,7 +27,7 @@ private final class NotificationDelegate: NSObject, UNUserNotificationCenterDele
 }
 
 actor NotificationService {
-    private let center = UNUserNotificationCenter.current()
+    private nonisolated(unsafe) let center = UNUserNotificationCenter.current()
     private let delegate = NotificationDelegate()
     private let reminderID = "com.reviewreminder.reminder"
     private var scheduledReminderFireDate: Date?
