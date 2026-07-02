@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 // Shows notifications even while app is active (always-running menu bar app)
 private final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
