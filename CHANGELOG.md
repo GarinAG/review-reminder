@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Установка через Homebrew: `brew tap garinag/tap && brew install --cask review-reminder` (тап [garinag/homebrew-tap](https://github.com/garinag/homebrew-tap)); cask обновляется автоматически из `release.yml` при каждом релизе
+
 ### Changed
 
 - Время следующего периодического напоминания вынесено из строки каждого МР в общий футер меню-бара (раньше одно и то же значение дублировалось в каждой строке)

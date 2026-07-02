@@ -38,3 +38,26 @@ jobs:
         with:
           files: .build/bundle/ReviewReminder.zip
           generate_release_notes: true
+
+      - name: Compute sha256
+        id: sha
+        run: echo "sha256=$(shasum -a 256 .build/bundle/ReviewReminder.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: garinag/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Update cask
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i '' "s/version \".*\"/version \"$VERSION\"/" tap/Casks/review-reminder.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.sha.outputs.sha256 }}\"/" tap/Casks/review-reminder.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "review-reminder $VERSION" || exit 0
+          git push

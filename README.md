@@ -10,11 +10,11 @@
   <img alt="platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-blue">
   <img alt="swift" src="https://img.shields.io/badge/Swift-6-orange">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
-  <a href="https://github.com/GarinAG/review-reminder/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/GarinAG/review-reminder"></a>
+  <a href="https://github.com/garinag/review-reminder/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/garinag/review-reminder"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/GarinAG/review-reminder/releases/latest/download/ReviewReminder.zip"><strong>Скачать последнюю версию</strong></a>
+  <a href="https://github.com/garinag/review-reminder/releases/latest/download/ReviewReminder.zip"><strong>Скачать последнюю версию</strong></a>
 </p>
 
 Приложение для трея macOS, которое следит за открытыми merge request'ами в GitLab и напоминает, когда вас ждёт ревью.
@@ -23,7 +23,18 @@
 
 ## Установка
 
-1. Скачай `ReviewReminder.zip` со [страницы релизов](https://github.com/GarinAG/review-reminder/releases/latest).
+### Homebrew (рекомендуется)
+
+```bash
+brew tap garinag/tap
+brew install --cask review-reminder
+```
+
+Обновление: `brew upgrade --cask review-reminder`.
+
+### Вручную
+
+1. Скачай `ReviewReminder.zip` со [страницы релизов](https://github.com/garinag/review-reminder/releases/latest).
 2. Распакуй и перенеси `ReviewReminder.app` в `~/Applications`.
 3. Сними карантин Gatekeeper (приложение подписано ad-hoc, без Apple Developer аккаунта):
    ```bash
