@@ -10,11 +10,26 @@
   <img alt="platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-blue">
   <img alt="swift" src="https://img.shields.io/badge/Swift-6-orange">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
+  <a href="https://github.com/GarinAG/review-reminder/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/GarinAG/review-reminder"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/GarinAG/review-reminder/releases/latest/download/ReviewReminder.zip"><strong>Скачать последнюю версию</strong></a>
 </p>
 
 Приложение для трея macOS, которое следит за открытыми merge request'ами в GitLab и напоминает, когда вас ждёт ревью.
 Живёт в строке меню (без иконки в Dock), периодически опрашивает GitLab API и показывает системные уведомления о
 новых МР, изменениях в уже открытых МР и упоминаниях `@username` в комментариях.
+
+## Установка
+
+1. Скачай `ReviewReminder.zip` со [страницы релизов](https://github.com/GarinAG/review-reminder/releases/latest).
+2. Распакуй и перенеси `ReviewReminder.app` в `~/Applications`.
+3. Сними карантин Gatekeeper (приложение подписано ad-hoc, без Apple Developer аккаунта):
+   ```bash
+   xattr -rd com.apple.quarantine ~/Applications/ReviewReminder.app
+   ```
+4. Запусти. Дальше — настрой GitLab-токен в трее → Настройки (см. [DISTRIBUTION.md](DISTRIBUTION.md)).
 
 ## Зачем
 

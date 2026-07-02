@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (release)
+        run: swift build -c release
+
+      - name: Assemble .app bundle
+        run: |
+          set -euo pipefail
+          APP_NAME="ReviewReminder"
+          APP_PATH=".build/bundle/$APP_NAME.app"
+          mkdir -p "$APP_PATH/Contents/MacOS" "$APP_PATH/Contents/Resources"
+          cp ".build/release/$APP_NAME" "$APP_PATH/Contents/MacOS/$APP_NAME"
+          cp Resources/Info.plist "$APP_PATH/Contents/Info.plist"
+          [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP_PATH/Contents/Resources/AppIcon.icns"
+          codesign --force --sign - --entitlements Resources/ReviewReminder.entitlements "$APP_PATH"
+
+      - name: Zip app
+        run: |
+          cd .build/bundle
+          ditto -c -k --sequesterRsrc --keepParent ReviewReminder.app ReviewReminder.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .build/bundle/ReviewReminder.zip
+          generate_release_notes: true
