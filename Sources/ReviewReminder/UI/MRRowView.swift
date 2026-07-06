@@ -17,8 +17,13 @@ struct MRActionPopover: View {
         ("30 минут",  30),
         ("1 час",     60),
         ("2 часа",    120),
-        ("До завтра", 60 * 24),
     ]
+
+    private var tomorrowNineAM: Date {
+        let calendar = Calendar.current
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: Date())!
+        return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow)!
+    }
 
     var body: some View {
         if showApproveConfirm {
@@ -85,6 +90,10 @@ struct MRActionPopover: View {
                     appState.snoozeMR(id: mr.id, minutes: item.minutes)
                     isPresented = false
                 }
+            }
+            popoverButton("До завтра", icon: "clock", indent: true) {
+                appState.snoozeMR(id: mr.id, until: tomorrowNineAM)
+                isPresented = false
             }
 
             Divider().padding(.vertical, 2)
@@ -319,6 +328,51 @@ struct ReviewedMRRow: View {
 
             Button {
                 appState.undoReviewed(id: mr.id)
+            } label: {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+            }
+            .buttonStyle(.plain)
+            .help("Вернуть в очередь")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(isHovered ? Color.primary.opacity(0.04) : .clear)
+        .onHover { isHovered = $0 }
+        .animation(.easeInOut(duration: 0.1), value: isHovered)
+    }
+}
+
+// MARK: - Ignored MR Row
+
+struct IgnoredMRRow: View {
+    @Environment(AppState.self) private var appState
+    let mr: MRDisplayItem
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.gray.opacity(0.45))
+                .frame(width: 7, height: 7)
+
+            Button {
+                NSWorkspace.shared.open(mr.url)
+                appState.recordViewed(id: mr.id)
+            } label: {
+                Text(mr.title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                appState.dismissIgnore(id: mr.id)
             } label: {
                 Image(systemName: "arrow.uturn.backward")
                     .font(.system(size: 11, weight: .medium))

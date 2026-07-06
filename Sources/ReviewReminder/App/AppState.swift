@@ -78,8 +78,11 @@ final class AppState: @unchecked Sendable {
     }
 
     func snoozeMR(id: Int64, minutes: Int) {
+        snoozeMR(id: id, until: Date().addingTimeInterval(TimeInterval(minutes * 60)))
+    }
+
+    func snoozeMR(id: Int64, until: Date) {
         Task {
-            let until = Date().addingTimeInterval(TimeInterval(minutes * 60))
             let state = MRUserStateRecord(mrId: id, status: .snoozed, snoozedUntil: until, updatedAt: Date())
             let item = mergeRequests.first(where: { $0.id == id })
             try? await storage.upsertUserState(state)
@@ -92,7 +95,7 @@ final class AppState: @unchecked Sendable {
                 await notifications.scheduleSnoozeExpired(
                     mrTitle: item.title,
                     url: item.url.absoluteString,
-                    afterSeconds: TimeInterval(minutes * 60)
+                    afterSeconds: until.timeIntervalSinceNow
                 )
             }
         }

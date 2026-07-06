@@ -15,6 +15,9 @@ struct MenuBarView: View {
     private var reviewedMRs: [MRDisplayItem] {
         appState.mergeRequests.filter { $0.status == .approved }
     }
+    private var ignoredMRs: [MRDisplayItem] {
+        appState.mergeRequests.filter { $0.status == .ignored }
+    }
 
     // Group active MRs by repo name, sorted alphabetically
     private var groupedActiveMRs: [(repo: String, items: [MRDisplayItem])] {
@@ -31,7 +34,7 @@ struct MenuBarView: View {
                 notConfiguredView
             } else if appState.isLoading && appState.mergeRequests.isEmpty {
                 loadingView
-            } else if activeMRs.isEmpty && snoozedMRs.isEmpty && reviewedMRs.isEmpty {
+            } else if activeMRs.isEmpty && snoozedMRs.isEmpty && reviewedMRs.isEmpty && ignoredMRs.isEmpty {
                 emptyView
             } else {
                 mrListView
@@ -187,6 +190,7 @@ struct MenuBarView: View {
     private var mrListView: some View {
         let hasSnoozed = !snoozedMRs.isEmpty
         let hasReviewed = !reviewedMRs.isEmpty
+        let hasIgnored = !ignoredMRs.isEmpty
 
         return ScrollView {
             VStack(spacing: 0) {
@@ -196,7 +200,7 @@ struct MenuBarView: View {
                     }
                     ForEach(Array(group.items.enumerated()), id: \.element.id) { i, mr in
                         MRRowView(mr: mr).id(mr.id)
-                        if i < group.items.count - 1 || gi < groupedActiveMRs.count - 1 || hasSnoozed || hasReviewed {
+                        if i < group.items.count - 1 || gi < groupedActiveMRs.count - 1 || hasSnoozed || hasReviewed || hasIgnored {
                             Divider().padding(.leading, 14)
                         }
                     }
@@ -206,7 +210,7 @@ struct MenuBarView: View {
                     sectionHeader("ОТЛОЖЕНЫ")
                     ForEach(Array(snoozedMRs.enumerated()), id: \.element.id) { i, mr in
                         MRRowView(mr: mr).id(mr.id)
-                        if i < snoozedMRs.count - 1 || hasReviewed {
+                        if i < snoozedMRs.count - 1 || hasReviewed || hasIgnored {
                             Divider().padding(.leading, 14)
                         }
                     }
@@ -216,7 +220,17 @@ struct MenuBarView: View {
                     sectionHeader("ПРОВЕРЕНЫ")
                     ForEach(Array(reviewedMRs.enumerated()), id: \.element.id) { i, mr in
                         ReviewedMRRow(mr: mr).id(mr.id)
-                        if i < reviewedMRs.count - 1 {
+                        if i < reviewedMRs.count - 1 || hasIgnored {
+                            Divider().padding(.leading, 14)
+                        }
+                    }
+                }
+
+                if hasIgnored {
+                    sectionHeader("ИГНОРИРУЮТСЯ")
+                    ForEach(Array(ignoredMRs.enumerated()), id: \.element.id) { i, mr in
+                        IgnoredMRRow(mr: mr).id(mr.id)
+                        if i < ignoredMRs.count - 1 {
                             Divider().padding(.leading, 14)
                         }
                     }
