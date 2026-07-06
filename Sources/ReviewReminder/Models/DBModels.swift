@@ -71,7 +71,7 @@ enum MRStatus: String, Codable, Sendable {
     case approved
 }
 
-enum ReviewEventType: String, Codable, Sendable {
+enum ReviewEventType: String, Codable, Sendable, CaseIterable {
     case reviewed
     case approved
     case snoozed

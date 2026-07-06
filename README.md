@@ -141,7 +141,8 @@ open ~/Applications/ReviewReminder.app
 1. Нажать на иконку → **Настройки**
 2. Вкладка **GitLab**:
    - **URL** — адрес инстанса GitLab, например `https://gitlab.example.com`
-   - **Токен доступа** — Personal Access Token с правами `read_api` (хранится в Keychain)
+   - **Токен доступа** — Personal Access Token с правами `api` (нужно для approve МР; для
+     read-only режима без approve достаточно `read_api`), хранится в Keychain
    - **Репозитории** — пути проектов (`group/project`), можно выбрать из списка через «Выбрать из GitLab»
 3. Вкладка **Уведомления** — включить/выключить системные уведомления и периодические напоминания
 4. Вкладка **Фильтры** — режим показа МР, исключение черновиков, игнор-список меток
@@ -152,7 +153,7 @@ open ~/Applications/ReviewReminder.app
 
 GitLab → аватар → **Edit profile** → **Access Tokens** → **Add new token**
 
-- Scopes: `read_api`
+- Scopes: `api` (нужен для approve прямо из приложения; `read_api` хватит, если approve не нужен)
 - Expiration: по желанию
 
 ## Команды разработки

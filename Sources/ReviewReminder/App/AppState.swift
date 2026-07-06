@@ -9,6 +9,7 @@ final class AppState: @unchecked Sendable {
     var pendingCount: Int = 0
     var isLoading: Bool = false
     var lastError: String?
+    var actionError: String?
     var currentUser: GitLabUser?
     var stats: ReviewStats?
     var nextReminderDate: Date?
@@ -110,25 +111,14 @@ final class AppState: @unchecked Sendable {
         }
     }
 
-    func markReviewed(id: Int64) {
-        Task {
-            let state = MRUserStateRecord(mrId: id, status: .approved, snoozedUntil: nil, updatedAt: Date())
-            let item = mergeRequests.first(where: { $0.id == id })
-            try? await storage.upsertUserState(state)
-            let alreadyViewed = (try? await storage.hasEvent(.reviewed, mrId: id)) ?? false
-            if !alreadyViewed {
-                try? await storage.recordEvent(.init(
-                    id: nil, mrId: id, eventType: .reviewed, occurredAt: Date(),
-                    extraJSON: ReviewEventRecord.metaJSON(title: item?.title ?? "", url: item?.url.absoluteString)
-                ))
-            }
-            updateItemStatus(id: id, status: .approved, snoozedUntil: nil)
-        }
-    }
-
     func approveMR(item: MRDisplayItem) {
         Task {
-            try? await apiClient.approveMR(projectId: item.projectId, mrIid: item.mrIid)
+            do {
+                try await apiClient.approveMR(projectId: item.projectId, mrIid: item.mrIid)
+            } catch {
+                actionError = "Не удалось одобрить «\(item.title)»: \(error.localizedDescription)"
+                return
+            }
             let state = MRUserStateRecord(mrId: item.id, status: .approved, snoozedUntil: nil, updatedAt: Date())
             try? await storage.upsertUserState(state)
             try? await storage.recordEvent(.init(
@@ -207,7 +197,8 @@ final class AppState: @unchecked Sendable {
                 status: .pending, snoozedUntil: nil,
                 mrIid: item.mrIid, projectId: item.projectId,
                 approvalsCount: item.approvalsCount, approvalsRequired: item.approvalsRequired,
-                discussionsResolved: item.discussionsResolved, discussionsTotal: item.discussionsTotal
+                discussionsResolved: item.discussionsResolved, discussionsTotal: item.discussionsTotal,
+                canApprove: item.canApprove
             )
             changed = true
         }
@@ -228,7 +219,8 @@ final class AppState: @unchecked Sendable {
                 approvalsCount: old.approvalsCount,
                 approvalsRequired: old.approvalsRequired,
                 discussionsResolved: old.discussionsResolved,
-                discussionsTotal: old.discussionsTotal
+                discussionsTotal: old.discussionsTotal,
+                canApprove: old.canApprove
             )
         }
         pendingCount = mergeRequests.filter(\.isActive).count

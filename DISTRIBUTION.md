@@ -45,7 +45,7 @@ bash Scripts/install.sh
 1. Нажми на иконку → **Настройки**
 2. Вкладка **GitLab**:
    - **URL** — адрес GitLab, например `https://gitlab.example.com`
-   - **Токен** — Personal Access Token с правами `read_api`
+   - **Токен** — Personal Access Token с правами `api` (нужно для approve МР; `read_api` хватит без approve)
    - **Репозитории** — пути проектов, например `group/project-one, group/project-two`
 3. Нажми **Сохранить** — приложение сразу сделает первый запрос
 
@@ -54,7 +54,7 @@ bash Scripts/install.sh
 GitLab → аватар → **Edit profile** → **Access Tokens** → **Add new token**
 
 - Name: любое, например `review-reminder`
-- Scopes: `read_api`
+- Scopes: `api` (для approve; `read_api` без approve)
 - Expiration: по желанию
 
 ---

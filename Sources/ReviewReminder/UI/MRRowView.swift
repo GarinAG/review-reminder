@@ -9,6 +9,7 @@ struct MRActionPopover: View {
     @Binding var isPresented: Bool
 
     @State private var copied = false
+    @State private var showApproveConfirm = false
 
     private let snoozeDurations: [(label: String, minutes: Int)] = [
         ("5 минут",   5),
@@ -20,6 +21,37 @@ struct MRActionPopover: View {
     ]
 
     var body: some View {
+        if showApproveConfirm {
+            approveConfirmView
+        } else {
+            actionsList
+        }
+    }
+
+    private var approveConfirmView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Одобрить МР «\(mr.title)»?")
+                .font(.system(size: 13))
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Button("Отмена") {
+                    showApproveConfirm = false
+                }
+                Spacer()
+                Button("Одобрить") {
+                    appState.approveMR(item: mr)
+                    showApproveConfirm = false
+                    isPresented = false
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(10)
+        .frame(width: 230)
+    }
+
+    private var actionsList: some View {
         VStack(alignment: .leading, spacing: 2) {
             // Copy link
             popoverButton(copied ? "Скопировано!" : "Копировать ссылку",
@@ -71,9 +103,10 @@ struct MRActionPopover: View {
 
             Divider().padding(.vertical, 2)
 
-            popoverButton("Отметить проверенным", icon: "checkmark.circle", color: .green) {
-                appState.markReviewed(id: mr.id)
-                isPresented = false
+            if mr.canApprove && mr.status != .approved {
+                popoverButton("Одобрить", icon: "checkmark.seal", color: .blue) {
+                    showApproveConfirm = true
+                }
             }
         }
         .padding(6)

@@ -17,6 +17,7 @@ struct MRDisplayItem: Identifiable, Sendable, Equatable {
     let approvalsRequired: Int
     let discussionsResolved: Int
     let discussionsTotal: Int
+    let canApprove: Bool
 
     func taskId(pattern: String) -> String? {
         guard !pattern.isEmpty,

@@ -108,6 +108,10 @@ struct StatsView: View {
                             )
                             .foregroundStyle(by: .value("Тип", item.type))
                         }
+                        .chartForegroundStyleScale(
+                            domain: ReviewEventType.allCases.map(\.label),
+                            range: ReviewEventType.allCases.map(\.color)
+                        )
                         .chartLegend(position: .bottom)
                         .frame(height: 180)
                     }

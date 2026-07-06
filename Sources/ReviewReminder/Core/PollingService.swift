@@ -108,10 +108,11 @@ actor PollingService {
                 && ignoredLabels.isDisjoint(with: mr.labels.map { $0.lowercased() })
         }
 
-        let relevant: [GitLabMR]
         switch config.mrFilter {
         case .allWithoutMyReview:
-            var keep: [GitLabMR] = []
+            // Already approved by me on GitLab (e.g. via the in-app Approve button or the
+            // web UI directly) — mark it approved locally too, but keep it in the list so it
+            // still shows up under "Проверено" instead of disappearing.
             for mr in filtered {
                 let approvals = try await appState.apiClient.fetchApprovals(
                     projectId: project.id, mrIid: mr.iid
@@ -119,31 +120,32 @@ actor PollingService {
                 let alreadyApproved = approvals.approvedBy.contains {
                     $0.user.id == currentUser.id
                 }
-                if !alreadyApproved {
-                    keep.append(mr)
-                } else if let existing = try? await appState.storage.fetchMRRecord(
-                    gitlabId: mr.id, projectPath: repoPath
-                ), let mrId = existing.id {
-                    let userState = try? await appState.storage.userState(for: mrId)
-                    if userState?.status == .pending || userState?.status == .snoozed {
-                        let alreadyRecorded = (try? await appState.storage.hasEvent(.approved, mrId: mrId)) ?? false
-                        if !alreadyRecorded {
-                            let newState = MRUserStateRecord(
-                                mrId: mrId, status: .approved, snoozedUntil: nil, updatedAt: Date()
-                            )
-                            try? await appState.storage.upsertUserState(newState)
-                            try? await appState.storage.recordEvent(.init(
-                                id: nil, mrId: mrId, eventType: .approved, occurredAt: Date(),
-                                extraJSON: ReviewEventRecord.metaJSON(title: mr.title, url: mr.webURL, mrIid: mr.iid, projectPath: repoPath)
-                            ))
-                        }
+                guard alreadyApproved,
+                      let existing = try? await appState.storage.fetchMRRecord(
+                          gitlabId: mr.id, projectPath: repoPath
+                      ),
+                      let mrId = existing.id
+                else { continue }
+
+                let userState = try? await appState.storage.userState(for: mrId)
+                if userState?.status == .pending || userState?.status == .snoozed {
+                    let alreadyRecorded = (try? await appState.storage.hasEvent(.approved, mrId: mrId)) ?? false
+                    if !alreadyRecorded {
+                        let newState = MRUserStateRecord(
+                            mrId: mrId, status: .approved, snoozedUntil: nil, updatedAt: Date()
+                        )
+                        try? await appState.storage.upsertUserState(newState)
+                        try? await appState.storage.recordEvent(.init(
+                            id: nil, mrId: mrId, eventType: .approved, occurredAt: Date(),
+                            extraJSON: ReviewEventRecord.metaJSON(title: mr.title, url: mr.webURL, mrIid: mr.iid, projectPath: repoPath)
+                        ))
                     }
                 }
             }
-            relevant = keep
         case .assignedToMe:
-            relevant = filtered
+            break
         }
+        let relevant = filtered
 
         var seenIds = Set<Int>()
         for mr in relevant { seenIds.insert(mr.id) }
@@ -315,7 +317,8 @@ actor PollingService {
             approvalsCount: approvals.approvedBy.count,
             approvalsRequired: approvals.approvalsRequired,
             discussionsResolved: discussionsResolved,
-            discussionsTotal: discussionsTotal
+            discussionsTotal: discussionsTotal,
+            canApprove: approvals.userCanApprove
         )
     }
 }

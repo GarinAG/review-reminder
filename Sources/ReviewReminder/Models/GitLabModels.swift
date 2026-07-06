@@ -45,12 +45,14 @@ struct GitLabMR: Codable, Sendable {
 struct GitLabApprovals: Sendable {
     let approvalsRequired: Int
     let approvedBy: [ApprovalEntry]
+    let userCanApprove: Bool
 }
 
 extension GitLabApprovals: Decodable {
     enum CodingKeys: String, CodingKey {
         case approvalsRequired = "approvals_required"
         case approvedBy        = "approved_by"
+        case userCanApprove    = "user_can_approve"
     }
 
     init(from decoder: Decoder) throws {
@@ -58,6 +60,9 @@ extension GitLabApprovals: Decodable {
         // approvals_required absent on some GitLab CE configurations
         approvalsRequired = (try? c.decodeIfPresent(Int.self, forKey: .approvalsRequired)) ?? 0
         approvedBy        = (try? c.decode([ApprovalEntry].self, forKey: .approvedBy)) ?? []
+        // absent on GitLab versions/tokens without approvals scope info — default to true
+        // so the button still appears rather than silently hiding the feature
+        userCanApprove     = (try? c.decodeIfPresent(Bool.self, forKey: .userCanApprove)) ?? true
     }
 }
 

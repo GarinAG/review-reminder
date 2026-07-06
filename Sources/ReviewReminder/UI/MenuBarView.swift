@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct MenuBarView: View {
     @Environment(AppState.self) private var appState
@@ -47,12 +48,36 @@ struct MenuBarView: View {
                     .lineLimit(2)
             }
 
+            if let error = appState.actionError {
+                Divider()
+                HStack {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                    Spacer()
+                    Button {
+                        appState.actionError = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+            }
+
             Divider()
             footer
         }
         .frame(width: 420)
         .onAppear {
             Task { appState.setup() }
+            // .menuBarExtraStyle(.window) doesn't make its window key on open, so the first
+            // hover/click just activates the app instead of hitting SwiftUI's hit-testing —
+            // forcing activation here is what fixes the delayed hover / "needs two clicks" bug.
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
