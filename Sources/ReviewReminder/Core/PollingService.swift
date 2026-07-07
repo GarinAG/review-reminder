@@ -214,7 +214,10 @@ actor PollingService {
 
             if changed {
                 let state = try await appState.storage.userState(for: mrId)
-                if state?.status == .snoozed || state?.status == .approved {
+                let userAlreadyApproved = approvals.approvedBy.contains {
+                    $0.user.id == currentUser.id
+                }
+                if state?.status == .snoozed || (state?.status == .approved && !userAlreadyApproved) {
                     let newState = MRUserStateRecord(
                         mrId: mrId, status: .pending, snoozedUntil: nil, updatedAt: Date()
                     )
